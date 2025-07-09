@@ -121,6 +121,14 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Civic Impact Tickets server running on port ${PORT}`);
   console.log(`📱 Health check: http://localhost:${PORT}/health`);
   console.log(`🌐 App available at: http://localhost:${PORT}`);
+  console.log(`🔧 Debug endpoint: http://localhost:${PORT}/debug`);
+  console.log(`📁 Serving from: ${__dirname}/dist`);
+});
+
+// Handle server startup errors
+server.on('error', (err) => {
+  console.error('Server startup error:', err);
+  process.exit(1);
 });
 
 // Graceful shutdown

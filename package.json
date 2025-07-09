@@ -3,16 +3,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "description": "Decentralized Ticketing with Anti-Scalping, Universal Loyalty Rewards, and Social Impact Vendor Plugins",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build": "npx expo export -p web",
+    "build": "npx expo export -p web --output-dir dist",
     "build:web": "npx expo export -p web --output-dir dist",
     "serve": "npx serve dist -s -p $PORT",
-    "start:prod": "serve dist -s -p $PORT"
+    "start:prod": "serve dist -s -p $PORT",
+    "render-build": "npm run build && echo 'Build completed successfully'",
+    "postinstall": "npx expo install --fix"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.21.0",
