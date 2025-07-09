@@ -29,9 +29,6 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-router"
-    ],
     "scheme": "civic-impact-tickets",
     "platforms": ["ios", "android", "web"]
   }
