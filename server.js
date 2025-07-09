@@ -4,27 +4,74 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// Specifically handle _expo routes (for Expo web bundles)
-app.use('/_expo', express.static(path.join(__dirname, 'dist/_expo')));
-
-// Handle assets
-app.use('/assets', express.static(path.join(__dirname, 'dist/assets')));
-
-// Add proper headers for JS files
-app.use('*.js', (req, res, next) => {
-  res.set('Content-Type', 'application/javascript');
+// Enable detailed logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
-// Handle React Router (SPA fallback to index.html)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// Set security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
 });
 
-app.listen(PORT, () => {
+// Serve static files with proper MIME types
+app.use(express.static(path.join(__dirname, 'dist'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (filePath.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+    }
+  }
+}));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    port: PORT 
+  });
+});
+
+// Catch-all handler: send back index.html for any non-API routes
+app.get('*', (req, res, next) => {
+  // Don't interfere with static assets
+  if (req.url.includes('.')) {
+    return next();
+  }
+  
+  console.log(`Serving index.html for route: ${req.url}`);
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'), (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(500).send('Error loading application');
+    }
+  });
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).send('Internal Server Error');
+});
+
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Civic Impact Tickets server running on port ${PORT}`);
-  console.log(`📱 App available at: http://localhost:${PORT}`);
+  console.log(`📱 Health check: http://localhost:${PORT}/health`);
+  console.log(`🌐 App available at: http://localhost:${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
 }); 
