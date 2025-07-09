@@ -40,6 +40,61 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Diagnostic endpoint
+app.get('/debug', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  const distPath = path.join(__dirname, 'dist');
+  const indexPath = path.join(distPath, 'index.html');
+  const jsPath = path.join(distPath, '_expo/static/js/web');
+  
+  try {
+    const distExists = fs.existsSync(distPath);
+    const indexExists = fs.existsSync(indexPath);
+    const jsExists = fs.existsSync(jsPath);
+    
+    let jsFiles = [];
+    if (jsExists) {
+      jsFiles = fs.readdirSync(jsPath);
+    }
+    
+    let indexContent = '';
+    if (indexExists) {
+      indexContent = fs.readFileSync(indexPath, 'utf8').substring(0, 500);
+    }
+    
+    res.json({
+      status: 'debug',
+      timestamp: new Date().toISOString(),
+      port: PORT,
+      paths: {
+        distExists,
+        indexExists,
+        jsExists,
+        distPath,
+        indexPath,
+        jsPath
+      },
+      jsFiles,
+      indexContentPreview: indexContent,
+      nodeVersion: process.version,
+      platform: process.platform,
+      cwd: process.cwd(),
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Catch-all handler: send back index.html for any non-API routes
 app.get('*', (req, res, next) => {
   // Don't interfere with static assets
