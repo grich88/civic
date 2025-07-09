@@ -12,11 +12,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build": "npx expo export -p web --output-dir dist",
-    "build:web": "npx expo export -p web --output-dir dist",
+    "build": "npx expo export --platform web --output-dir dist --clear",
+    "build:web": "npx expo export --platform web --output-dir dist --clear",
     "serve": "npx serve dist -s -p $PORT",
     "start:prod": "serve dist -s -p $PORT",
-    "render-build": "npm run build && echo 'Build completed successfully'",
+    "render-build": "npm install && npm run build",
     "postinstall": "npx expo install --fix"
   },
   "dependencies": {

@@ -23,10 +23,25 @@ app.use(express.static(path.join(__dirname, 'dist'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache JS files for 1 year
     } else if (filePath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
     } else if (filePath.endsWith('.html')) {
       res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Cache-Control', 'no-cache'); // Don't cache HTML
+    } else if (filePath.includes('favicon')) {
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache favicon for 1 day
+    }
+  }
+}));
+
+// Specifically handle _expo routes for better compatibility
+app.use('/_expo', express.static(path.join(__dirname, 'dist/_expo'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
     }
   }
 }));
@@ -95,12 +110,6 @@ app.get('/debug', (req, res) => {
   }
 });
 
-// Test emergency version
-app.get('/emergency', (req, res) => {
-  console.log('Serving emergency version');
-  res.sendFile(path.join(__dirname, 'dist', 'test-app.html'));
-});
-
 // Catch-all handler: send back index.html for any non-API routes
 app.get('*', (req, res, next) => {
   // Don't interfere with static assets
@@ -110,19 +119,21 @@ app.get('*', (req, res, next) => {
   
   console.log(`Serving index.html for route: ${req.url}`);
   const indexPath = path.join(__dirname, 'dist', 'index.html');
-  const emergencyPath = path.join(__dirname, 'dist', 'test-app.html');
   
-  // Try to serve the main React app first
   res.sendFile(indexPath, (err) => {
     if (err) {
-      console.error('Error serving index.html, falling back to emergency version:', err);
-      // Fallback to emergency version
-      res.sendFile(emergencyPath, (fallbackErr) => {
-        if (fallbackErr) {
-          console.error('Error serving emergency version:', fallbackErr);
-          res.status(500).send('Error loading application');
-        }
-      });
+      console.error('Error serving index.html:', err);
+      res.status(500).send(`
+        <html>
+          <head><title>App Loading Error</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>🚨 Civic Impact Tickets</h1>
+            <p>App is loading... Please refresh in a moment.</p>
+            <p><small>Error: ${err.message}</small></p>
+            <script>setTimeout(() => location.reload(), 3000);</script>
+          </body>
+        </html>
+      `);
     }
   });
 });
